@@ -31,6 +31,7 @@ import coil.util.DebugLogger
 import com.hippo.ehviewer.client.EhCookieStore
 import com.hippo.ehviewer.client.EhDns
 import com.hippo.ehviewer.client.EhEngine
+import com.hippo.ehviewer.client.EhSSLSocketFactory
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.data.GalleryDetail
 import com.hippo.ehviewer.coil.MergeInterceptor
@@ -43,11 +44,17 @@ import com.hippo.util.ReadableTime
 import com.hippo.util.launchIO
 import com.hippo.yorozuya.FileUtils
 import com.hippo.yorozuya.IntIdGenerator
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
 import eu.kanade.tachiyomi.network.interceptor.CloudflareInterceptor
 import kotlinx.coroutines.DelicateCoroutinesApi
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import java.io.File
+import java.net.Proxy
+import java.security.KeyStore
+import javax.net.ssl.TrustManagerFactory
+import javax.net.ssl.X509TrustManager
 
 class EhApplication : SceneApplication(), ImageLoaderFactory {
     private val mIdGenerator = IntIdGenerator()
@@ -222,6 +229,14 @@ class EhApplication : SceneApplication(), ImageLoaderFactory {
                 cookieJar(EhCookieStore)
                 dns(EhDns)
                 proxySelector(ehProxySelector)
+                if (Settings.dF) {
+                    val factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())!!
+                    factory.init(null as KeyStore?)
+                    val manager = factory.trustManagers!!
+                    val trustManager = manager.filterIsInstance<X509TrustManager>().first()
+                    sslSocketFactory(EhSSLSocketFactory, trustManager)
+                    proxy(Proxy.NO_PROXY)
+                }
                 addInterceptor(CloudflareInterceptor(application))
             }.build()
         }
@@ -236,6 +251,14 @@ class EhApplication : SceneApplication(), ImageLoaderFactory {
             nonCacheOkHttpClient.newBuilder()
                 .cache(Cache(File(application.cacheDir, "http_cache"), 20 * 1024 * 1024))
                 .build()
+        }
+
+        val ktorClient by lazy {
+            HttpClient(OkHttp) {
+                engine {
+                    preconfigured = nonCacheOkHttpClient
+                }
+            }
         }
 
         val galleryDetailCache by lazy {
