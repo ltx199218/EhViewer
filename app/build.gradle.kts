@@ -168,11 +168,13 @@ dependencies {
 
     implementation(libs.okio.jvm)
 
-    // https://github.com/RikkaApps/RikkaX
+    // https://githubfast.com/RikkaApps/RikkaX
     implementation(libs.bundles.rikkax)
 
     // https://coil-kt.github.io/coil/changelog/
     implementation(libs.coil)
+
+    implementation("io.ktor:ktor-client-okhttp:2.3.0")
 
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.jsoup)
@@ -189,7 +191,7 @@ ksp {
 
 spotless {
     kotlin {
-        // https://github.com/diffplug/spotless/issues/111
+        // https://githubfast.com/diffplug/spotless/issues/111
         target("src/**/*.kt")
         ktlint()
     }
