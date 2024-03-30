@@ -147,7 +147,7 @@ class SpiderDen(private val mGalleryInfo: GalleryInfo) {
         referer: String?,
         notifyProgress: (Long, Long, Int) -> Unit,
     ): Boolean {
-        return client.prepareGet(url) {
+         return client.prepareGet(url) {
             var state: Long = 0
             referer(referer)
             onDownload { bytesSentTotal, contentLength ->
@@ -160,25 +160,19 @@ class SpiderDen(private val mGalleryInfo: GalleryInfo) {
         }
     }
 
-    private suspend fun saveFromHttpResponse(index: Int, body: HttpResponse): Boolean {
+     private suspend fun saveFromHttpResponse(index: Int, body: HttpResponse): Boolean {
         val contentType = body.contentType()
         val extension = contentType?.contentSubtype ?: "jpg"
         val length = body.contentLength() ?: return false
-
+         
         suspend fun doSave(outFile: UniFile): Long {
-             val ret: Long
+            val ret: Long
             outFile.openOutputStream().use {
                 ret = body.bodyAsChannel().copyTo(it.channel)
             }
             if (contentType == ContentType.Image.GIF) {
                 outFile.openFileDescriptor("rw").use {
                     rewriteGifSource2(it.fd)
-                    }
-                }
-                if (extension.lowercase() == "gif") {
-                    outFile.openFileDescriptor("rw").use {
-                        rewriteGifSource2(it.fd)
-                    }
                 }
             }
             return ret
