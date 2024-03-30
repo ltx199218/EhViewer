@@ -172,7 +172,7 @@ class SpiderDen(private val mGalleryInfo: GalleryInfo) {
             }
             if (contentType == ContentType.Image.GIF) {
                 outFile.openFileDescriptor("rw").use {
-                    rewriteGifSource2(it.fd)
+                    rewriteGifSource2(it.fd) 
                 }
             }
             return ret
