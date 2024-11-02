@@ -16,7 +16,7 @@
 package com.hippo.ehviewer
 
 import android.app.Activity
-import android.os.StrictMode
+import android.content.ComponentCallbacks2
 import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.view.View
@@ -29,6 +29,7 @@ import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.util.DebugLogger
 import com.hippo.ehviewer.client.EhCookieStore
+import com.hippo.ehviewer.client.EhDns
 import com.hippo.ehviewer.client.EhEngine
 import com.hippo.ehviewer.client.EhTagDatabase
 import com.hippo.ehviewer.client.data.GalleryDetail
@@ -171,6 +172,13 @@ class EhApplication :
         }
     }
 
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+            galleryDetailCache.evictAll()
+        }
+    }
+
     fun putGlobalStuff(o: Any): Int {
         val id = mIdGenerator.nextId()
         mGlobalStuffMap[id] = o
@@ -217,11 +225,11 @@ class EhApplication :
         val nonCacheOkHttpClient by lazy {
             OkHttpClient.Builder().apply {
                 cookieJar(EhCookieStore)
+                dns(EhDns)
                 proxySelector(ehProxySelector)
                 addInterceptor(CloudflareInterceptor(application))
             }.build()
         }
-
         val noRedirectOkHttpClient by lazy {
             nonCacheOkHttpClient.newBuilder()
                 .followRedirects(false)
@@ -242,6 +250,8 @@ class EhApplication :
                 }
             }
         }
+
+        val hosts by lazy { Hosts(application, "hosts.db") }
 
         val favouriteStatusRouter by lazy { FavouriteStatusRouter() }
 
